@@ -719,6 +719,10 @@ this.DOMApplicationRegistry = {
       return;
     }
 
+    if (!aManifest) {
+      return;
+    }
+
     if ('datastores-owned' in aManifest) {
       for (let name in aManifest['datastores-owned']) {
         let readonly = "access" in aManifest['datastores-owned'][name]

@@ -54,6 +54,8 @@ public:
 
   void SetSource(Animation* aSource);
   void Tick();
+  void ResolveStartTime(const TimeStamp& aReadyTimeStamp);
+  void ResolvePauseTime(const TimeStamp& aReadyTimeStamp);
 
   const nsString& Name() const {
     return mSource ? mSource->Name() : EmptyString();

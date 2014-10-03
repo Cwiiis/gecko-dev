@@ -8,6 +8,7 @@
 
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/PendingAnimationTracker.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/dom/AnimationPlayer.h"
 
@@ -252,6 +253,11 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
     AnimationPlayerPtrArray newPlayers;
     BuildAnimations(aStyleContext, aElement, timeline, newPlayers);
 
+    // Get the pending animation tracker for recording any new / removed
+    // animations
+    PendingAnimationTracker* pendingAnimations =
+      aElement->OwnerDoc()->GetOrCreatePendingAnimationTracker();
+
     if (newPlayers.IsEmpty()) {
       if (collection) {
         collection->Destroy();
@@ -297,6 +303,7 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
             }
           }
           if (!oldPlayer) {
+            pendingAnimations->AddPendingPlayer(*newPlayer);
             continue;
           }
 
@@ -314,18 +321,13 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
 
           // Handle changes in play state.
           if (!oldPlayer->IsPaused() && newPlayer->IsPaused()) {
-            // Start pause at current time.
-            oldPlayer->mHoldTime = oldPlayer->GetCurrentTimeDuration();
+            pendingAnimations->AddPausingPlayer(*oldPlayer);
           } else if (oldPlayer->IsPaused() && !newPlayer->IsPaused()) {
-            if (now.IsNull()) {
-              oldPlayer->mStartTime.SetNull();
-            } else {
-              oldPlayer->mStartTime.SetValue(now.Value() -
-                                               oldPlayer->mHoldTime.Value());
-            }
-            oldPlayer->mHoldTime.SetNull();
+            pendingAnimations->AddPendingPlayer(*oldPlayer);
+            oldPlayer->mPlayState = newPlayer->mPlayState;
+          } else {
+            oldPlayer->mPlayState = newPlayer->mPlayState;
           }
-          oldPlayer->mPlayState = newPlayer->mPlayState;
 
           // Replace new animation with the (updated) old one and remove the
           // old one from the array so we don't try to match it any more.
@@ -341,6 +343,10 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
     } else {
       collection =
         GetAnimationPlayers(aElement, aStyleContext->GetPseudoType(), true);
+      for (size_t newIdx = 0, newEnd = newPlayers.Length();
+           newIdx != newEnd; ++newIdx) {
+        pendingAnimations->AddPendingPlayer(*newPlayers[newIdx]);
+      }
     }
     collection->mPlayers.SwapElements(newPlayers);
     collection->mNeedsRefreshes = true;
@@ -459,11 +465,8 @@ nsAnimationManager::BuildAnimations(nsStyleContext* aStyleContext,
                     aStyleContext->GetPseudoType(), timing, src.GetName());
     dest->SetSource(destAnim);
 
-    dest->mStartTime = now;
     dest->mPlayState = src.GetPlayState();
-    if (dest->IsPaused()) {
-      dest->mHoldTime.SetValue(TimeDuration(0));
-    }
+    dest->mHoldTime.SetValue(TimeDuration(0));
 
     // While current drafts of css3-animations say that later keyframes
     // with the same key entirely replace earlier ones (no cascading),

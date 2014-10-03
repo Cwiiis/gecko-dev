@@ -351,8 +351,19 @@ AddAnimationForProperty(nsIFrame* aFrame, nsCSSProperty aProperty,
     aLayer->AddAnimationForNextTransaction() :
     aLayer->AddAnimation();
 
+  // XXX In future we should be able to replace this with a call to
+  // GetPlayState and check if it is pending
+  nsIPresShell* presShell = presContext->GetPresShell();
+  nsIDocument* document = presShell->GetDocument();
+  PendingAnimationTracker* tracker = document->GetPendingAnimationTracker();
+
   const AnimationTiming& timing = aPlayer->GetSource()->Timing();
-  animation->startTime() = aPlayer->Timeline()->ToTimeStamp(aPlayer->mStartTime.Value() + timing.mDelay);
+  animation->startTime() = tracker->IsPlayerPending(*aPlayer) ?
+    TimeStamp() :
+    aPlayer->Timeline()->ToTimeStamp(aPlayer->mStartTime.Value());
+  animation->delay() = tracker->IsPlayerPending(*aPlayer) ?
+    -aPlayer->GetCurrentTimeDuration().Value() :
+    timing.mDelay;
   animation->duration() = timing.mIterationDuration;
   animation->iterationCount() = timing.mIterationCount;
   animation->direction() = timing.mDirection;
@@ -1234,6 +1245,17 @@ void nsDisplayList::PaintRoot(nsDisplayListBuilder* aBuilder,
   PaintForFrame(aBuilder, aCtx, aBuilder->RootReferenceFrame(), aFlags);
 }
 
+static bool
+StartPendingAnimationPlayers(nsIDocument* aDocument, void* startTime)
+{
+  PendingAnimationTracker* tracker = aDocument->GetPendingAnimationTracker();
+  if (tracker) {
+    tracker->ResolvePendingPlayers(*static_cast<TimeStamp*>(startTime));
+  }
+  aDocument->EnumerateSubDocuments(StartPendingAnimationPlayers, startTime);
+  return true;
+}
+
 /**
  * We paint by executing a layer manager transaction, constructing a
  * single layer representing the display list, and then making it the
@@ -1389,6 +1411,13 @@ void nsDisplayList::PaintForFrame(nsDisplayListBuilder* aBuilder,
                                aBuilder, flags);
   aBuilder->SetIsCompositingCheap(temp);
   layerBuilder->DidEndTransaction();
+
+  if (document) {
+    TimeStamp animationStart = layerManager->GetAnimationStart();
+    MOZ_ASSERT(!animationStart.IsNull(),
+               "Using a layer manager that doesn't update the animation start");
+    StartPendingAnimationPlayers(document, &animationStart);
+  }
 
   nsIntRegion invalid;
   if (props) {

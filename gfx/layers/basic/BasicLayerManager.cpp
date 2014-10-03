@@ -544,6 +544,11 @@ BasicLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback,
     }
   }
 
+  if (mRoot) {
+    mAnimationStart = TimeStamp::Now();
+    mRoot->StartAnimations(mAnimationStart);
+  }
+
 #ifdef MOZ_LAYERS_HAVE_LOG
   Log();
   MOZ_LAYERS_LOG(("]----- EndTransaction"));

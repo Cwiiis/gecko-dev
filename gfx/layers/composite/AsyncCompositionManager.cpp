@@ -436,7 +436,10 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint)
 
     activeAnimations = true;
 
-    TimeDuration elapsedDuration = aPoint - animation.startTime();
+    MOZ_ASSERT(!animation.startTime().IsNull(),
+               "Failed to resolve start time of pending animations");
+    TimeDuration elapsedDuration =
+      aPoint - animation.startTime() - animation.delay();
     // Skip animations that are yet to start.
     //
     // Currently, this should only happen when the refresh driver is under test

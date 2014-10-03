@@ -85,6 +85,7 @@ namespace mozilla {
 class CSSStyleSheet;
 class ErrorResult;
 class EventStates;
+class PendingAnimationTracker;
 class SVGAttrAnimationRuleProcessor;
 
 namespace css {
@@ -1766,6 +1767,15 @@ public:
   // initialization, if this document supports animation and if
   // mAnimationController isn't yet initialized.
   virtual nsSMILAnimationController* GetAnimationController() = 0;
+
+  // Get the tracker for animations that are waiting to start.
+  // Returns nullptr if there is no pending animation tracker for this document.
+  virtual mozilla::PendingAnimationTracker* GetPendingAnimationTracker() = 0;
+
+  // Get the tracker for animations that are waiting to start or create it if
+  // it doesn't exist. As a result, the return value will never be nullptr.
+  virtual mozilla::PendingAnimationTracker*
+  GetOrCreatePendingAnimationTracker() = 0;
 
   // Makes the images on this document capable of having their animation
   // active or suspended. An Image will animate as long as at least one of its

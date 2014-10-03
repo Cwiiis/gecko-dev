@@ -53,6 +53,43 @@ AnimationPlayer::Tick()
   }
 }
 
+void
+AnimationPlayer::ResolveStartTime(const TimeStamp& aReadyTimeStamp)
+{
+  // This is now wrong, we really need to make the start time protected so
+  // we can be sure that when it gets updated we also take this out of the
+  // hashmap and never get a callback where we end up clobbering a legitimate
+  // start time
+
+  // FIXME: Make this into an assertion once we have proper pause handling
+  if (mHoldTime.IsNull())
+    return;
+
+  Nullable<TimeDuration> readyTime =
+    mTimeline->ToTimelineTime(aReadyTimeStamp);
+  if (!readyTime.IsNull()) {
+    mStartTime.SetValue(readyTime.Value() - mHoldTime.Value());
+  }
+  if (!IsPaused()) {
+    mHoldTime.SetNull();
+  }
+}
+
+void
+AnimationPlayer::ResolvePauseTime(const TimeStamp& aReadyTimeStamp)
+{
+  // XXX This is all wrong in all sorts of ways but it's a start
+  Nullable<TimeDuration> readyTime =
+    mTimeline->ToTimelineTime(aReadyTimeStamp);
+
+  if (readyTime.IsNull() || mStartTime.IsNull()) {
+    mHoldTime.SetNull();
+  } else {
+    mHoldTime.SetValue(readyTime.Value() - mStartTime.Value());
+    mPlayState = NS_STYLE_ANIMATION_PLAY_STATE_PAUSED;
+  }
+}
+
 bool
 AnimationPlayer::IsRunning() const
 {

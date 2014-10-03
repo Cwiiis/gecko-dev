@@ -472,6 +472,32 @@ Layer::SetAnimations(const AnimationArray& aAnimations)
 }
 
 void
+Layer::StartAnimations(const TimeStamp& aStartTime)
+{
+  MOZ_ASSERT(!mPendingAnimations,
+             "Should have called ApplyPendingUpdatesToSubtree first");
+
+  bool updated = false;
+  for (size_t animIdx = 0, animEnd = mAnimations.Length();
+       animIdx < animEnd; animIdx++) {
+    Animation& anim = mAnimations[animIdx];
+    if (anim.startTime().IsNull()) {
+      anim.startTime() = aStartTime;
+      updated = true;
+    }
+  }
+
+  // XXX: Do I need to do this?
+  if (updated) {
+    Mutated();
+  }
+
+  for (Layer* child = GetFirstChild(); child; child = child->GetNextSibling()) {
+    child->StartAnimations(aStartTime);
+  }
+}
+
+void
 Layer::SetAsyncPanZoomController(uint32_t aIndex, AsyncPanZoomController *controller)
 {
   MOZ_ASSERT(aIndex < GetFrameMetricsCount());

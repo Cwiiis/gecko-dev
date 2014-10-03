@@ -266,7 +266,13 @@ ClientLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback,
   if (!mRepeatTransaction && !GetRoot()->GetInvalidRegion().IsEmpty()) {
     GetRoot()->Mutated();
   }
-  
+
+  // XXX Only do this if certain flags are set
+  if (!mIsRepeatTransaction) {
+    mAnimationStart = TimeStamp::Now();
+    GetRoot()->StartAnimations(mAnimationStart);
+  }
+
   mPaintedLayerCallback = nullptr;
   mPaintedLayerCallbackData = nullptr;
 

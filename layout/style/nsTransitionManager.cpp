@@ -19,6 +19,7 @@
 #include "nsCSSPropertySet.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/ContentEvents.h"
+#include "mozilla/PendingAnimationTracker.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/dom/Element.h"
 #include "nsIFrame.h"
@@ -533,7 +534,7 @@ nsTransitionManager::ConsiderStartingTransition(
   segment.mTimingFunction.Init(tf);
 
   nsRefPtr<dom::AnimationPlayer> player = new dom::AnimationPlayer(timeline);
-  player->mStartTime = timeline->GetCurrentTimeDuration();
+  player->mHoldTime.SetValue(TimeDuration(0));
   player->SetSource(pt);
 
   if (!aElementTransitions) {
@@ -569,6 +570,10 @@ nsTransitionManager::ConsiderStartingTransition(
   }
   aElementTransitions->UpdateAnimationGeneration(mPresContext);
   aElementTransitions->PostRestyleForAnimation(presContext);
+
+  PendingAnimationTracker* pendingAnimations =
+    aElement->OwnerDoc()->GetOrCreatePendingAnimationTracker();
+  pendingAnimations->AddPendingPlayer(*player);
 
   *aStartedAny = true;
   aWhichStarted->AddProperty(aProperty);

@@ -62,6 +62,7 @@
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/PendingAnimationTracker.h"
 #include "mozilla/dom/DOMImplementation.h"
 #include "mozilla/dom/StyleSheetList.h"
 #include "nsDataHashtable.h"
@@ -1040,6 +1041,18 @@ public:
   // If HasAnimationController is true, this is guaranteed to return non-null.
   nsSMILAnimationController* GetAnimationController() MOZ_OVERRIDE;
 
+  // REVIEW: We could move mPendingAnimationTracker and the implementation of
+  // this method to nsIDocument. That would make it non-virtual and inline-able.
+  // However, it would mean PendingAnimationTracker could no longer be an
+  // incomplete type within nsIDocument.h.
+  mozilla::PendingAnimationTracker* GetPendingAnimationTracker() MOZ_OVERRIDE
+  {
+    return mPendingAnimationTracker;
+  }
+
+  mozilla::PendingAnimationTracker*
+  GetOrCreatePendingAnimationTracker() MOZ_OVERRIDE;
+
   void SetImagesNeedAnimating(bool aAnimating) MOZ_OVERRIDE;
 
   virtual void SuppressEventHandling(SuppressionType aWhat,
@@ -1496,6 +1509,10 @@ protected:
 
   // Array of observers
   nsTObserverArray<nsIDocumentObserver*> mObservers;
+
+  // Tracker for animations waiting to start, lazily-created in
+  // PendingAnimationTracker().
+  nsRefPtr<mozilla::PendingAnimationTracker> mPendingAnimationTracker;
 
   // Weak reference to the scope object (aka the script global object)
   // that, unlike mScriptGlobalObject, is never unset once set. This

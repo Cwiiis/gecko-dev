@@ -37,8 +37,7 @@ Axis::Axis(AsyncPanZoomController* aAsyncPanZoomController)
     mVelocity(0.0f),
     mAxisLocked(false),
     mAsyncPanZoomController(aAsyncPanZoomController),
-    mOverscroll(0),
-    mInUnderscroll(false)
+    mOverscroll(0)
 {
 }
 
@@ -193,10 +192,6 @@ ParentLayerCoord Axis::GetOverscroll() const {
   return mOverscroll;
 }
 
-bool Axis::IsInUnderscroll() const {
-  return mInUnderscroll;
-}
-
 void Axis::StepOverscrollAnimation(double aStepDurationMilliseconds) {
   // Apply spring physics to the overscroll as time goes on.
   // Note: this method of sampling isn't perfectly smooth, as it assumes
@@ -226,16 +221,15 @@ void Axis::StepOverscrollAnimation(double aStepDurationMilliseconds) {
     mAsyncPanZoomController, Name(), mVelocity);
 
   // Adjust the amount of overscroll based on the velocity.
-  // Note that we allow for oscillations. mInUnderscroll tracks whether
-  // we are currently in a state where we have overshot and the spring is
-  // displaced in the other direction.
+  // Note that we allow for oscillations, but rather than allowing the spring
+  // to cause overscroll to underflow, we act as if it hits an immovable
+  // object and reverse the direction of the velocity.
   float oldOverscroll = mOverscroll;
   mOverscroll += (mVelocity * aStepDurationMilliseconds);
   bool signChange = (oldOverscroll * mOverscroll) < 0;
   if (signChange) {
-    // If the sign of mOverscroll changed, we have either entered underscroll
-    // or exited it.
-    mInUnderscroll = !mInUnderscroll;
+    mOverscroll = -mOverscroll;
+    mVelocity = -mVelocity;
   }
 }
 
@@ -269,7 +263,6 @@ bool Axis::SampleOverscrollAnimation(const TimeDuration& aDelta) {
       mAsyncPanZoomController, Name());
     mOverscroll = 0;
     mVelocity = 0;
-    mInUnderscroll = false;
     return false;
   }
 

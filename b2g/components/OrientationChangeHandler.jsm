@@ -6,7 +6,9 @@
 
 this.EXPORTED_SYMBOLS = [];
 
+const Ci = Components.interfaces;
 const Cu = Components.utils;
+
 Cu.import("resource://gre/modules/Services.jsm");
 
 let window = Services.wm.getMostRecentWindow("navigator:browser");
@@ -58,11 +60,42 @@ let OrientationChangeHandler = {
       return;
     }
 
+    let docViewer = window
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIWebNavigation)
+      .QueryInterface(Ci.nsIDocShell)
+      .contentViewer;
+
     window.addEventListener("resize", function waitForResize(e) {
       window.removeEventListener("resize", waitForResize);
-      window.addEventListener("MozAfterPaint", function waitForPaint(e) {
-        window.removeEventListener("MozAfterPaint", waitForPaint);
+
+      /*
+      // Only pause painting after the next frame so that the animation
+      // has a chance to begin.
+      window.setTimeout(() => { trigger(); docViewer.pausePainting(); });
+
+      // We won't get transitionend after pausing painting, so use a timeout
+      // to resume.
+      window.setTimeout(docViewer.resumePainting, 2000);
+      */
+
+      // Wait for the first paint after resize, then trigger the animation
+      docViewer.pausePainting();
+      window.addEventListener("MozAfterPaint", function waitForResizePaint(e) {
+        window.removeEventListener("MozAfterPaint", waitForResizePaint);
+
+        // Start the transition
         trigger();
+
+        // Request a new frame to get the animation to start, then pause painting
+        docViewer.resumePainting();
+        window.requestAnimationFrame(() => {
+          docViewer.pausePainting();
+
+          // We won't get transitionend after pausing painting, so use a
+          // timeout to resume instead.
+          window.setTimeout(docViewer.resumePainting, 250);
+        });
       });
     });
   }

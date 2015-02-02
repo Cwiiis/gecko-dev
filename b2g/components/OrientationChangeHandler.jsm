@@ -49,8 +49,6 @@ let OrientationChangeHandler = {
 
     function trigger() {
       system.style.transition = "transform .25s cubic-bezier(.15, .7, .6, .9)";
-
-      system.style.opacity = "";
       system.style.transform = "";
     }
 
@@ -62,7 +60,10 @@ let OrientationChangeHandler = {
 
     window.addEventListener("resize", function waitForResize(e) {
       window.removeEventListener("resize", waitForResize);
-      trigger();
+      window.addEventListener("MozAfterPaint", function waitForPaint(e) {
+        window.removeEventListener("MozAfterPaint", waitForPaint);
+        trigger();
+      });
     });
   }
 };

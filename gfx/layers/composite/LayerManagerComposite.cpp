@@ -205,12 +205,17 @@ LayerManagerComposite::ApplyOcclusionCulling(Layer* aLayer, nsIntRegion& aOpaque
   // can easily convert aOpaqueRegion into pre-transform coordinates and include
   // that region.
   if (aLayer->GetLocalTransform().Is2D(&transform2d)) {
-    if (transform2d.IsIntegerTranslation()) {
+    bool isProgressiveLayer = false;
+    if (aLayer->AsLayerComposite()->GetTiledLayerComposer()) {
+      isProgressiveLayer = aLayer->AsLayerComposite()->GetTiledLayerComposer()->GetValidRegion() != aLayer->AsLayerComposite()->GetShadowVisibleRegion();
+    }
+    if (!isProgressiveLayer && transform2d.IsIntegerTranslation()) {
       isTranslation = true;
       localOpaque = aOpaqueRegion;
       localOpaque.MoveBy(-transform2d._31, -transform2d._32);
     }
   }
+
 
   // Subtract any areas that we know to be opaque from our
   // visible region.

@@ -345,6 +345,12 @@ struct BasicTiledLayerPaintData {
    * progressively.
    */
   bool mPaintFinished : 1;
+
+  /*
+   * Whether or not this layer is subject to off-main-thread animations with
+   * respect to the nearest scrollable ancestor.
+   */
+  bool mHasTransformAnimation : 1;
 };
 
 class SharedFrameMetricsHelper

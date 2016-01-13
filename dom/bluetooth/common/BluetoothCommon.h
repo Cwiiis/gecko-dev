@@ -603,6 +603,12 @@ struct BluetoothUuid {
 
   BluetoothUuid& operator=(const BluetoothUuid& aRhs) = default;
 
+  /* This less-than operator is used for sorted insertion of nsTArray */
+  bool operator<(const BluetoothUuid& aUuid) const
+  {
+    return memcmp(mUuid, aUuid.mUuid, sizeof(aUuid.mUuid)) < 0;
+  };
+
   /**
    * |Clear| assigns an invalid value (i.e., zero) to the UUID.
    */

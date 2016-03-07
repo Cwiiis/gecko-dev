@@ -3,14 +3,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-DIRS += ['tests']
-
 JS_PREFERENCE_FILES += [
      'embedding.js',
 ]
 
 if CONFIG['ENABLE_TESTS']:
-    DIRS += ['tests/gtest']
+    DIRS += ['tests', 'tests/gtest']
 
 FAIL_ON_WARNINGS = True
 
@@ -108,5 +106,8 @@ DEFINES['MOZ_WIDGET_TOOLKIT'] = '"%s"' % (CONFIG['MOZ_WIDGET_TOOLKIT'])
 if CONFIG['TARGET_XPCOM_ABI']:
     DEFINES['TARGET_OS_ABI'] = '"%s_%s"' % (CONFIG['OS_TARGET'],
                                             CONFIG['TARGET_XPCOM_ABI'])
+
+CFLAGS += CONFIG['TK_CFLAGS']
+CXXFLAGS += CONFIG['TK_CFLAGS']
 
 include('/ipc/chromium/chromium-config.mozbuild')

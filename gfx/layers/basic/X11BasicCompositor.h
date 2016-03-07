@@ -9,7 +9,6 @@
 #include "mozilla/layers/BasicCompositor.h"
 #include "mozilla/layers/X11TextureSourceBasic.h"
 #include "mozilla/layers/TextureHostBasic.h"
-#include "gfxXlibSurface.h"
 #include "mozilla/gfx/2D.h"
 
 namespace mozilla {

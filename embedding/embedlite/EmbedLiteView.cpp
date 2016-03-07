@@ -28,12 +28,12 @@ static FakeListener sFakeListener;
 EmbedLiteView::EmbedLiteView(EmbedLiteApp* aApp, PEmbedLiteViewParent* aViewImpl, uint32_t aViewId)
   : mApp(aApp)
   , mListener(NULL)
-  , mViewImpl(dynamic_cast<EmbedLiteViewIface*>(aViewImpl))
+  , mViewImpl(reinterpret_cast<EmbedLiteViewIface*>(aViewImpl))
   , mViewParent(aViewImpl)
   , mUniqueID(aViewId)
 {
   LOGT();
-  dynamic_cast<EmbedLiteViewIface*>(aViewImpl)->SetEmbedAPIView(this);
+  reinterpret_cast<EmbedLiteViewIface*>(aViewImpl)->SetEmbedAPIView(this);
 }
 
 EmbedLiteView::~EmbedLiteView()

@@ -22,6 +22,11 @@
 #include "mozilla/layers/Compositor.h"  // for Compositor
 #include "mozilla/layers/CompositorOGL.h"  // for CompositorOGL
 
+#ifdef MOZ_WIDGET_GTK
+#include "mozilla/layers/X11BasicCompositor.h"
+#include "gfxPlatformGtk.h"
+#endif
+
 namespace mozilla {
 namespace embedlite {
 

@@ -5,10 +5,6 @@
 #ifndef GLLIBRARYEGL_H_
 #define GLLIBRARYEGL_H_
 
-#if defined(MOZ_X11)
-#include "mozilla/X11Util.h"
-#endif
-
 #include "GLLibraryLoader.h"
 #include "mozilla/ThreadLocal.h"
 #include "nsIFile.h"

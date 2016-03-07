@@ -4,6 +4,10 @@
 
 #include "GLLibraryEGL.h"
 
+#if defined(MOZ_X11)
+#include "mozilla/X11Util.h"
+#endif
+
 #include "gfxCrashReporterUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Assertions.h"
